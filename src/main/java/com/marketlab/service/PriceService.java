@@ -12,4 +12,5 @@ public interface PriceService {
     double getPrice(String symbol);
 
     List<PricePoint> getHistory(String symbol, int points);
+    void tick();
 }
