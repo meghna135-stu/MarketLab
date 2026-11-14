@@ -1,11 +1,13 @@
 package com.marketlab;
 
+import com.marketlab.service.CsvPriceService;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
 
 public class MainApp extends Application {
+
     @Override
     public void start(Stage stage) {
         stage.setTitle("MarketLab");
@@ -14,6 +16,7 @@ public class MainApp extends Application {
     }
 
     public static void main(String[] args) {
+
         launch(args);
     }
 }
