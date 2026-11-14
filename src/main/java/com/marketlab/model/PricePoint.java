@@ -1,4 +1,5 @@
 package com.marketlab.model;
 
-public record PricePoint() {
-}
+import java.time.LocalDateTime;
+
+public record PricePoint(LocalDateTime time, double price) {}
