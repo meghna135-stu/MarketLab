@@ -1,9 +1,6 @@
 package com.marketlab;
 
-import com.marketlab.service.CsvPriceService;
-import com.marketlab.service.PortfolioService;
-import com.marketlab.service.PortfolioServiceImpl;
-import com.marketlab.service.PriceService;
+import com.marketlab.service.*;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -19,6 +16,7 @@ public class MainApp extends Application {
     }
 
     public static void main(String[] args) {
+
         launch(args);
     }
 }
