@@ -79,7 +79,10 @@ public class CsvPriceService implements PriceService {
         int from = Math.max(0, index - count + 1);
         return new ArrayList<>(points.subList(from, index + 1));
     }
-
+    @Override
+    public List<PricePoint> getFullHistory(String symbol) {
+        return new ArrayList<>(data.get(symbol));
+    }
     @Override
     public void tick() {
         if (index < maxIndex) index++;
