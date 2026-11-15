@@ -1,6 +1,6 @@
 package com.marketlab.engine;
 
-import com.marketlab.service.CsvPriceService;
+
 import com.marketlab.strategy.BuyAndHoldStrategy;
 import com.marketlab.strategy.Signal;
 import org.junit.jupiter.api.Test;
@@ -11,7 +11,7 @@ class BacktestEngineTest {
 
     @Test
     void buyAndHoldOnRelianceMatchesHandCalculation() {
-        BacktestEngine backtester = new BacktestEngine(CsvPriceService::new);
+        BacktestEngine backtester = new BacktestEngine(FakePriceService::new);
 
         BacktestResult r = backtester.run("RELIANCE", new BuyAndHoldStrategy(), 100_000, 4);
 
@@ -25,7 +25,7 @@ class BacktestEngineTest {
 
     @Test
     void eachRunStartsFresh() {
-        BacktestEngine backtester = new BacktestEngine(CsvPriceService::new);
+        BacktestEngine backtester = new BacktestEngine(FakePriceService::new);
 
         BacktestResult first = backtester.run("RELIANCE", new BuyAndHoldStrategy(), 100_000, 4);
         BacktestResult second = backtester.run("RELIANCE", new BuyAndHoldStrategy(), 100_000, 4);

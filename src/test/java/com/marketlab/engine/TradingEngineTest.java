@@ -1,6 +1,6 @@
 package com.marketlab.engine;
 
-import com.marketlab.service.CsvPriceService;
+
 import com.marketlab.service.PortfolioService;
 import com.marketlab.service.PortfolioServiceImpl;
 import com.marketlab.service.PriceService;
@@ -17,7 +17,7 @@ class TradingEngineTest {
 
     @BeforeEach
     void setUp() {
-        prices = new CsvPriceService();
+        prices = new FakePriceService();
         portfolio = new PortfolioServiceImpl(prices, 100_000);
         engine = new TradingEngine(prices, portfolio);
     }

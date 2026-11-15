@@ -2,6 +2,7 @@ package com.marketlab.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.marketlab.engine.FakePriceService;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,7 +13,7 @@ class PortfolioServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        prices = new CsvPriceService();
+        prices = new FakePriceService();
         portfolio = new PortfolioServiceImpl(prices, 100_000);
     }
 
