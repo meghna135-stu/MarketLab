@@ -9,36 +9,14 @@ import java.util.Map;
 
 public class PortfolioServiceImpl implements PortfolioService {
 
+    private static final double STARTING_CASH = 100_000;
+
     private final PriceService priceService;
+    private final Map<String, Holding> holdings = new LinkedHashMap<>();
+    private double cash = STARTING_CASH;
 
-    private final double startingCash;
-    private double cash;
-
-    private final Map<String, Holding> holdings =
-            new LinkedHashMap<>();
-
-    // Default starting cash: Rs. 1,00,000
     public PortfolioServiceImpl(PriceService priceService) {
-        this(priceService, 100000.0);
-    }
-
-    // Constructor with custom starting cash
-    public PortfolioServiceImpl(
-            PriceService priceService, double startingCash) {
-
-        if (priceService == null) {
-            throw new IllegalArgumentException(
-                    "Price service cannot be null");
-        }
-
-        if (startingCash < 0) {
-            throw new IllegalArgumentException(
-                    "Starting cash cannot be negative");
-        }
-
         this.priceService = priceService;
-        this.startingCash = startingCash;
-        this.cash = startingCash;
     }
 
     @Override
@@ -48,80 +26,32 @@ public class PortfolioServiceImpl implements PortfolioService {
 
     @Override
     public void buy(String symbol, int qty) {
-
-        if (qty <= 0) {
-            throw new IllegalArgumentException(
-                    "Quantity must be positive");
-        }
-
+        if (qty <= 0) throw new IllegalArgumentException("Quantity must be positive");
         double price = priceService.getPrice(symbol);
-        double totalCost = price * qty;
+        double cost = price * qty;
+        if (cost > cash) throw new IllegalArgumentException("Not enough cash");
 
-        if (totalCost > cash) {
-            throw new InsufficientFundsException(
-                    "Insufficient cash");
+        cash -= cost;
+        Holding old = holdings.get(symbol);
+        if (old == null) {
+            holdings.put(symbol, new Holding(symbol, qty, price));
+        } else {
+            int newQty = old.quantity() + qty;
+            double newAvg = (old.avgBuyPrice() * old.quantity() + cost) / newQty;
+            holdings.put(symbol, new Holding(symbol, newQty, newAvg));
         }
-
-        Holding oldHolding = holdings.get(symbol);
-
-        int oldQuantity = 0;
-        double oldAveragePrice = 0.0;
-
-        if (oldHolding != null) {
-            oldQuantity = oldHolding.quantity();
-            oldAveragePrice = oldHolding.avgBuyPrice();
-        }
-
-        int newQuantity = oldQuantity + qty;
-
-        double newAveragePrice =
-                ((oldQuantity * oldAveragePrice) + totalCost)
-                        / newQuantity;
-
-        Holding newHolding = new Holding(
-                symbol,
-                newQuantity,
-                newAveragePrice
-        );
-
-        holdings.put(symbol, newHolding);
-
-        cash -= totalCost;
     }
 
     @Override
     public void sell(String symbol, int qty) {
+        if (qty <= 0) throw new IllegalArgumentException("Quantity must be positive");
+        Holding h = holdings.get(symbol);
+        if (h == null || h.quantity() < qty) throw new IllegalArgumentException("Not enough shares");
 
-        if (qty <= 0) {
-            throw new IllegalArgumentException(
-                    "Quantity must be positive");
-        }
-
-        Holding holding = holdings.get(symbol);
-
-        if (holding == null || holding.quantity() < qty) {
-            throw new InsufficientSharesException(
-                    "Insufficient shares");
-        }
-
-        double sellingPrice = priceService.getPrice(symbol);
-
-        cash += sellingPrice * qty;
-
-        int remainingQuantity = holding.quantity() - qty;
-
-        if (remainingQuantity == 0) {
-            holdings.remove(symbol);
-        } else {
-            holdings.put(
-                    symbol,
-                    new Holding(
-                            symbol,
-                            remainingQuantity,
-                            holding.avgBuyPrice()
-                    )
-            );
-        }
+        cash += priceService.getPrice(symbol) * qty;
+        int remaining = h.quantity() - qty;
+        if (remaining == 0) holdings.remove(symbol);
+        else holdings.put(symbol, new Holding(symbol, remaining, h.avgBuyPrice()));
     }
 
     @Override
@@ -131,18 +61,10 @@ public class PortfolioServiceImpl implements PortfolioService {
 
     @Override
     public double getTotalPnL() {
-
-        double portfolioValue = cash;
-
-        for (Holding holding : holdings.values()) {
-
-            double currentPrice =
-                    priceService.getPrice(holding.symbol());
-
-            portfolioValue +=
-                    currentPrice * holding.quantity();
+        double value = 0;
+        for (Holding h : holdings.values()) {
+            value += priceService.getPrice(h.symbol()) * h.quantity();
         }
-
-        return portfolioValue - startingCash;
+        return cash + value - STARTING_CASH;
     }
 }
