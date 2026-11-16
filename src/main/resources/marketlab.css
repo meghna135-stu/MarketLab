@@ -1,0 +1,34 @@
+/* Palette uses W3C CSS named colors: midnightblue, steelblue, whitesmoke, green, crimson, darkorange, royalblue */
+.root {
+    -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-background-color: whitesmoke;
+}
+.top-bar { -fx-background-color: midnightblue; -fx-alignment: center-left; }
+.top-bar .label { -fx-text-fill: white; -fx-font-size: 14px; }
+.top-bar .button { -fx-background-color: steelblue; -fx-text-fill: white; }
+
+/*noinspection CssInvalidPseudoSelector*/
+.tab-pane > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: steelblue; }
+/*noinspection CssInvalidPseudoSelector*/
+.tab-pane > .tab-header-area > .headers-region > .tab:selected .tab-label { -fx-text-fill: white; }
+
+.table-view .column-header .label { -fx-font-weight: bold; }
+.button { -fx-cursor: hand; -fx-background-radius: 4; }
+
+.chart-series-line { -fx-stroke-width: 2px; }
+
+/* Market chart: series 0 = price (green when rising, red when dipping), 1 = MA10, 2 = MA30 */
+.market-chart.up   .default-color0.chart-series-line { -fx-stroke: green; }
+.market-chart.up   .default-color0.chart-legend-item-symbol { -fx-background-color: green; }
+.market-chart.down .default-color0.chart-series-line { -fx-stroke: crimson; }
+.market-chart.down .default-color0.chart-legend-item-symbol { -fx-background-color: crimson; }
+.market-chart .default-color1.chart-series-line { -fx-stroke: darkorange; }
+.market-chart .default-color1.chart-legend-item-symbol { -fx-background-color: darkorange; }
+.market-chart .default-color2.chart-series-line { -fx-stroke: royalblue; }
+.market-chart .default-color2.chart-legend-item-symbol { -fx-background-color: royalblue; }
+
+/* Backtest chart: series 0 = MA 10/30, 1 = Buy & Hold */
+.bt-chart .default-color0.chart-series-line { -fx-stroke: royalblue; }
+.bt-chart .default-color0.chart-legend-item-symbol { -fx-background-color: royalblue; }
+.bt-chart .default-color1.chart-series-line { -fx-stroke: darkorange; }
+.bt-chart .default-color1.chart-legend-item-symbol { -fx-background-color: darkorange; }
