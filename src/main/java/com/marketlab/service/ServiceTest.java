@@ -86,20 +86,14 @@ public class ServiceTest {
 
         test("7. Buy exactly what cash allows", () -> {
             CsvPriceService price = new CsvPriceService();
-
-            PortfolioServiceImpl p =
-                    new PortfolioServiceImpl(price, 12300.0);
+            double exact = price.getPrice("RELIANCE") * 10;
+            PortfolioServiceImpl p = new PortfolioServiceImpl(price, exact);
 
             p.buy("RELIANCE", 10);
 
-            check(p.getCash() == 0.0,
-                    "Cash should be zero");
-
-            check(p.getHoldings().size() == 1,
-                    "Holding should exist");
-
-            check(p.getHoldings().get(0).quantity() == 10,
-                    "Quantity should be 10");
+            check(Math.abs(p.getCash()) < 0.001, "Cash should be zero");
+            check(p.getHoldings().size() == 1, "Holding should exist");
+            check(p.getHoldings().getFirst().quantity() == 10, "Quantity should be 10");
         });
 
         test("8. Sell stock not owned", () -> {
@@ -137,20 +131,18 @@ public class ServiceTest {
 
         test("11. Buy twice at different prices", () -> {
             CsvPriceService price = new CsvPriceService();
-            PortfolioServiceImpl p =
-                    new PortfolioServiceImpl(price);
+            PortfolioServiceImpl p = new PortfolioServiceImpl(price);
 
+            double p0 = price.getPrice("RELIANCE");
             p.buy("RELIANCE", 2);
-
             price.tick();
-
+            double p1 = price.getPrice("RELIANCE");
             p.buy("RELIANCE", 2);
 
-            double average =
-                    p.getHoldings().get(0).avgBuyPrice();
+            double expected = (p0 + p1) / 2;   // equal quantities, so a simple average
+            double average = p.getHoldings().get(0).avgBuyPrice();
 
-            check(Math.abs(average - 1235.0) < 0.001,
-                    "Average price should be 1235");
+            check(Math.abs(average - expected) < 0.001, "Average price should be " + expected);
         });
 
         test("12. Sell part of a holding", () -> {
@@ -177,18 +169,15 @@ public class ServiceTest {
 
         test("13. P&L after price tick", () -> {
             CsvPriceService price = new CsvPriceService();
-            PortfolioServiceImpl p =
-                    new PortfolioServiceImpl(price);
+            PortfolioServiceImpl p = new PortfolioServiceImpl(price);
 
+            double p0 = price.getPrice("RELIANCE");
             p.buy("RELIANCE", 10);
-
             price.tick();
+            double p1 = price.getPrice("RELIANCE");
 
-            double expectedPnL = (1240.0 - 1230.0) * 10;
-
-            check(Math.abs(
-                    p.getTotalPnL() - expectedPnL
-            ) < 0.001, "P&L should equal 100");
+            double expectedPnL = (p1 - p0) * 10;
+            check(Math.abs(p.getTotalPnL() - expectedPnL) < 0.001, "P&L should equal " + expectedPnL);
         });
 
         test("14. Failed operations preserve portfolio", () -> {
