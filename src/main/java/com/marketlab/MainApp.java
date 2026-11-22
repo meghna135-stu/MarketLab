@@ -41,6 +41,9 @@ public class MainApp extends Application {
     private final Map<String, Double> shownPrices = new LinkedHashMap<>();   // date -> price on chart
     private final TextField qtyField = new TextField("1");
     private final CheckBox maBox = new CheckBox("Show MA 10/30");
+    private final ComboBox<OrderType> typeBox = new ComboBox<>();
+    private final TextField limitField = new TextField();
+    private final TableView<Order> pendingTable = new TableView<>();
     private final Label priceLbl = new Label(), msgLbl = new Label(),
             clickLbl = new Label("Hover or click a point on the graph to see its price");
 
@@ -99,7 +102,7 @@ public class MainApp extends Application {
         watch.getColumns().add(col("Symbol", Stock::symbol));
         watch.getColumns().add(col("Name", Stock::name));
         watch.getColumns().add(col("Price", (Stock s) -> String.format("₹%.2f", s.price())));
-        watch.getColumns().add(colored("Chg %", (Stock s) -> String.format("%+.2f%%", chg(s.symbol())), (Stock s) -> chg(s.symbol()),true));
+        watch.getColumns().add(colored("Chg %", (Stock s) -> String.format("%+.2f%%", chg(s.symbol())), (Stock s) -> chg(s.symbol()), true));
         watch.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         watch.setPrefWidth(380);
         watch.getSelectionModel().selectedItemProperty().addListener((o, a, s) -> {
@@ -137,10 +140,39 @@ public class MainApp extends Application {
 
         Label tradeTitle = new Label("Trade panel");
         tradeTitle.setStyle("-fx-font-size:15px;-fx-font-weight:bold;");
-        HBox row = new HBox(12, new Label("Quantity:"), qtyField, buy, sell);
+
+        typeBox.getItems().addAll(OrderType.values());
+        typeBox.setValue(OrderType.MARKET);
+        limitField.setPromptText("Limit price");
+        limitField.setPrefSize(120, 38);
+        limitField.visibleProperty().bind(typeBox.valueProperty().isEqualTo(OrderType.LIMIT));
+        limitField.managedProperty().bind(limitField.visibleProperty());
+
+        HBox row = new HBox(12, new Label("Quantity:"), qtyField,
+                new Label("Type:"), typeBox, limitField, buy, sell);
         row.setAlignment(Pos.CENTER_LEFT);
         HBox opts = new HBox(20, maBox, msgLbl);
-        VBox tradeCard = new VBox(10, tradeTitle, row, opts);
+
+        pendingTable.getColumns().add(col("ID", (Order o) -> String.valueOf(o.id())));
+        pendingTable.getColumns().add(col("Symbol", Order::symbol));
+        pendingTable.getColumns().add(col("Side", (Order o) -> o.side().toString()));
+        pendingTable.getColumns().add(col("Qty", (Order o) -> String.valueOf(o.qty())));
+        pendingTable.getColumns().add(col("Limit", (Order o) -> String.format("₹%.2f", o.limitPrice())));
+        pendingTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        pendingTable.setPrefHeight(90);
+        pendingTable.setPlaceholder(new Label("No pending orders"));
+
+        Button cancel = new Button("Cancel selected order");
+        cancel.setOnAction(e -> {
+            Order o = pendingTable.getSelectionModel().getSelectedItem();
+            if (o == null) { alert("Select a pending order to cancel."); return; }
+            engine.cancelOrder(o.id());
+            msgLbl.setText("Cancelled order #" + o.id());
+            refreshAll();
+        });
+
+        VBox tradeCard = new VBox(10, tradeTitle, row, opts,
+                new Label("Pending orders"), pendingTable, cancel);
         tradeCard.setPadding(new Insets(14));
         tradeCard.setStyle("-fx-background-color:white;-fx-border-color:lightsteelblue;"
                 + "-fx-border-radius:6;-fx-background-radius:6;");
@@ -201,11 +233,15 @@ public class MainApp extends Application {
     private void trade(OrderSide side) {
         try {
             int q = Integer.parseInt(qtyField.getText().trim());
-            Order o = engine.placeOrder(selected, side, OrderType.MARKET, q, null);
+            OrderType type = typeBox.getValue();
+            Double lp = type == OrderType.LIMIT ? Double.parseDouble(limitField.getText().trim()) : null;
+            Order o = engine.placeOrder(selected, side, type, q, lp);
             if (o.status() == OrderStatus.REJECTED) alert(o.reason());
+            else if (o.status() == OrderStatus.PENDING)
+                msgLbl.setText(String.format("Limit order placed: %s %d %s @ ₹%.2f", side, q, selected, lp));
             else msgLbl.setText((side == OrderSide.BUY ? "Bought " : "Sold ") + q + " " + selected);
         } catch (NumberFormatException e) {
-            alert("Enter a whole number for quantity.");
+            alert("Enter valid numbers for quantity and limit price.");
         } catch (Exception e) {
             alert(e.getMessage());
         }
@@ -263,7 +299,11 @@ public class MainApp extends Application {
         List<Trade> trades = engine.getTrades();
         Collections.reverse(trades);
         tradeTable.getItems().setAll(trades);
-
+        Order sel = pendingTable.getSelectionModel().getSelectedItem();
+        pendingTable.getItems().setAll(engine.getPendingOrders());
+        if (sel != null) pendingTable.getItems().stream()
+                .filter(o -> o.id() == sel.id()).findFirst()
+                .ifPresent(o -> pendingTable.getSelectionModel().select(o));
         double pnl = portfolio.getTotalPnL();
         cashLbl.setText(String.format("Cash: ₹%.2f", portfolio.getCash()));
         valueLbl.setText(String.format("Holdings: ₹%.2f", value));
